@@ -1,0 +1,49 @@
+﻿<Window x:Class="CarViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CarViewer"
+        mc:Ignorable="d"
+        Title="Car Viewer" Icon="Images/Car.ico"
+        MinHeight="200" Height="250"
+        MinWidth="180" Width="250"
+        Loaded="FormLoad" >
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition MinWidth="50" Width="100"/>
+            <ColumnDefinition MinWidth="70" Width="100" MaxWidth="300"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition MinHeight="35" Height="40"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0 -->
+        <Label Content="_Make:" Grid.Row="0" Grid.Column="1" Target="{Binding ElementName=textMake}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="textMake" IsReadOnly="True" MinWidth="60" Grid.Row="0" Grid.Column="2"  Margin="5" ToolTip="Displays the make of the car." VerticalContentAlignment="Center"/>
+        <!-- Row 1 -->
+        <Label Content="M_odel:" Grid.Row="1" Grid.Column="1" Target="{Binding ElementName=textModel}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="textModel" IsReadOnly="True" MinWidth="60" Grid.Row="1" Grid.Column="2" Margin="5" ToolTip="Displays the model of the car" VerticalContentAlignment="Center"/>
+        <!-- Row 2 -->
+        <Label Content="_Year:" Grid.Row="2" Grid.Column="1" Target="{Binding ElementName=textYear}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="textYear" IsReadOnly="True" MinWidth="60" Grid.Row="2" Grid.Column="2" Margin="5" ToolTip="Displays the year of the car" VerticalContentAlignment="Center"/>
+        <!-- Row 3 -->
+        <Label Content="_Price:" Grid.Row="3" Grid.Column="1" Target="{Binding ElementName=textPrice}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="textPrice" IsReadOnly="True" MinWidth="60" Grid.Row="3" Grid.Column="2" Margin="5" ToolTip="Displays the price of the car" VerticalContentAlignment="Center"/>
+        <!-- Row 4 -->
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.ColumnSpan="4" HorizontalAlignment="Center">
+            <Button x:Name="buttonFirst" Content="_First" MinWidth="45" Margin="5" ToolTip="Click to go to the first car in the list" Click="ShowFirstCar"/>
+            <Button x:Name="buttonPrevious" Content="Pre_vious" MinWidth="45" Margin="5" ToolTip="Click to go to the previous car in the list" Click="ShowPreviousCar"/>
+            <Button x:Name="buttonNext" Content="_Next" MinWidth="45" Margin="5" ToolTip="Click to go to the next car in the list" Click="ShowNextCar"/>
+            <Button x:Name="buttonLast" Content="_Last" MinWidth="45" Margin="5" ToolTip="Click to go to the last car in the list" Click="ShowLastCar"/>
+        </StackPanel>
+
+    </Grid>
+
+</Window>
