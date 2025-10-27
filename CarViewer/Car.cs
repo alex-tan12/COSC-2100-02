@@ -1,53 +1,124 @@
 ﻿// Author: Alex Tan (Lustrial)
-// Date: 2025-10-25
-// Description: A WPF Car Inventory application to view and add car models.
-
+// Updated: 2025-10-26
+// Car model with camelCase private fields, PascalCase public properties,
+// real-time UI updates via INotifyPropertyChanged, and a Display property.
 
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CarViewer
 {
-    public class Car
+    public class Car : INotifyPropertyChanged
     {
-        // ----- Class-level (static) -----
-        // Read-only count of all created Car objects.
+        // ----- Class-level -----
         public static int Count { get; private set; } = 0;
 
-        // ----- Instance-level -----
-        // Read-only unique identifier per assignment requirements.
+        // ----- Identity -----
         public int IdentificationNumber { get; }
 
-        public string Make { get; set; } = string.Empty;
-        public string Model { get; set; } = string.Empty;
-        public int Year { get; set; }
-        public decimal Price { get; set; }
-        public bool IsNew { get; set; }
+        // ----- Backing fields (camelCase) -----
+        private string make = string.Empty;
+        private string model = string.Empty;
+        private int year;
+        private decimal price;
+        private bool isNew;
 
-        // Default constructor:
-        //  - Assigns IdentificationNumber based on updated Count
+        // ----- Public properties (PascalCase) -----
+        public string Make
+        {
+            get => make;
+            set
+            {
+                if (make != value)
+                {
+                    make = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Display));
+                }
+            }
+        }
+
+        public string Model
+        {
+            get => model;
+            set
+            {
+                if (model != value)
+                {
+                    model = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Display));
+                }
+            }
+        }
+
+        public int Year
+        {
+            get => year;
+            set
+            {
+                if (year != value)
+                {
+                    year = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Display));
+                }
+            }
+        }
+
+        public decimal Price
+        {
+            get => price;
+            set
+            {
+                if (price != value)
+                {
+                    price = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Display));
+                }
+            }
+        }
+
+        public bool IsNew
+        {
+            get => isNew;
+            set
+            {
+                if (isNew != value)
+                {
+                    isNew = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Display));
+                }
+            }
+        }
+
+        // What the ListBox shows (bind XAML to this)
+        public string Display => $"#{IdentificationNumber}: {Year} {Make} {Model} — {Price:C} [{(IsNew ? "New" : "Used")}]";
+
+        // Constructors
         public Car()
         {
             Count++;
             IdentificationNumber = Count;
         }
 
-        // Parameterized constructor:
-        //  - sets all properties from parameters
-        public Car(string make, string model, int year, decimal price, bool isNew)
-            : this()
+        public Car(string make, string model, int year, decimal price, bool isNew) : this()
         {
-            Make = make;
-            Model = model;
-            Year = year;
-            Price = price;
-            IsNew = isNew;
+            this.make = make;
+            this.model = model;
+            this.year = year;
+            this.price = price;
+            this.isNew = isNew;
         }
 
-        // Summary for list display/result label
-        public override string ToString()
-        {
-            var condition = IsNew ? "New" : "Used";
-            return $"#{IdentificationNumber}: {Year} {Make} {Model} — {Price:C} [{condition}]";
-        }
+        public override string ToString() => Display;
+
+        // INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
