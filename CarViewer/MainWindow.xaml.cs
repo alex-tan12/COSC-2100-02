@@ -1,7 +1,6 @@
 ﻿// Authors: Kyle Chapman and Alex Tan
 // Updated: October 26, 2025
 // Description: WPF logic for the COSC2100 Assignment 2 "Car List" app
-//              Updated to use camelCase naming conventions
 
 using System;
 using System.Collections.Generic;

@@ -1,7 +1,6 @@
 ﻿// Author: Alex Tan (Lustrial)
 // Updated: 2025-10-26
-// Car model with camelCase private fields, PascalCase public properties,
-// real-time UI updates via INotifyPropertyChanged, and a Display property.
+// Description: A WPF Car Inventory application to view and add car models.
 
 using System;
 using System.ComponentModel;
