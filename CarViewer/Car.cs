@@ -1,41 +1,53 @@
-﻿// Description: 
-// Represents a car object with make, model, year, price, and availability status.
-// Includes a constructor and getter/setter properties.
+﻿// Author: Alex Tan (Lustrial)
+// Date: 2025-10-25
+// Description: A WPF Car Inventory application to view and add car models.
+
+
+using System;
 
 namespace CarViewer
 {
     public class Car
     {
-        // Auto-implemented properties for a car's basic information
-        public string Make { get; set; }
-        public string Model { get; set; }
+        // ----- Class-level (static) -----
+        // Read-only count of all created Car objects.
+        public static int Count { get; private set; } = 0;
+
+        // ----- Instance-level -----
+        // Read-only unique identifier per assignment requirements.
+        public int IdentificationNumber { get; }
+
+        public string Make { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
         public int Year { get; set; }
         public decimal Price { get; set; }
-        public bool IsAvailable { get; set; }
+        public bool IsNew { get; set; }
 
-        /// 
-        /// Parameterized constructor to initialize all fields.
-        /// 
-        public Car(string make, string model, int year, decimal price, bool isAvailable)
+        // Default constructor:
+        //  - Assigns IdentificationNumber based on updated Count
+        public Car()
+        {
+            Count++;
+            IdentificationNumber = Count;
+        }
+
+        // Parameterized constructor:
+        //  - sets all properties from parameters
+        public Car(string make, string model, int year, decimal price, bool isNew)
+            : this()
         {
             Make = make;
             Model = model;
             Year = year;
             Price = price;
-            IsAvailable = isAvailable;
+            IsNew = isNew;
         }
 
-        /// 
-        /// Default constructor (optional) in case you need to create an empty Car object.
-        /// 
-        public Car() { }
-
-        /// 
-        /// Returns a formatted string with the car's key details using ternary operator.
-        /// 
+        // Summary for list display/result label
         public override string ToString()
         {
-            return $"{Year} {Make} {Model} - {Price:C} {(IsAvailable ? "(Available)" : "(Unavailable)")}";
+            var condition = IsNew ? "New" : "Used";
+            return $"#{IdentificationNumber}: {Year} {Make} {Model} — {Price:C} [{condition}]";
         }
     }
 }
