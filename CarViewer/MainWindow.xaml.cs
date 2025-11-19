@@ -1,6 +1,6 @@
 ﻿// Authors: Kyle Chapman and Alex Tan
-// Updated: October 26, 2025
-// Description: WPF logic for the COSC2100 Assignment 2 "Car List" app
+// Updated: November 19, 2025
+// Description: A WPF vehicle inventory application to view, add, and analyze vehicles.
 
 using System;
 using System.Collections.Generic;
@@ -8,15 +8,15 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace CarViewer
 {
     public partial class MainWindow : Window
     {
-        // Private fields in camelCase
-        private readonly Dictionary<int, Car> carsById = new();
-        private readonly ObservableCollection<Car> carsView = new();
+        private readonly Dictionary<int, Vehicle> _vehiclesById = new();
+        private readonly ObservableCollection<Vehicle> _vehiclesView = new();
 
         public MainWindow()
         {
@@ -26,7 +26,7 @@ namespace CarViewer
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Populate makes (>=10)
+            // Populate makes
             comboMake.ItemsSource = new[]
             {
                 "Toyota", "Honda", "Ford", "Chevrolet", "Hyundai",
@@ -40,39 +40,55 @@ namespace CarViewer
             comboYear.ItemsSource = years;
 
             // Bind the list
-            listCars.ItemsSource = carsView;
+            listCars.ItemsSource = _vehiclesView;
 
-            // Defaults
-            ResetInputs();
+            // Default selection
+            radioCar.IsChecked = true;
 
-            // Load some demo cars (optional)
-            LoadSampleCars();
+            ResetInputsInternal(false);
+            LoadSampleVehicles();
+            UpdateStatistics();
+            UpdateStatus("Application started. Ready to add vehicles.");
         }
 
-        private bool ValidateInputs(out List<string> errors)
+        private bool ValidateInputs(out decimal parsedPrice)
         {
-            errors = new List<string>();
+            var errors = new List<string>();
+            parsedPrice = 0m;
 
             if (comboMake.SelectedItem is not string)
+            {
                 errors.Add("Please select a Make.");
+            }
 
-            if (string.IsNullOrWhiteSpace(textModel.Text))
-                errors.Add("Model cannot be blank.");
+            // Let the Vehicle.Model property handle blank model via an ArgumentNullException.
 
             if (comboYear.SelectedItem is not int)
+            {
                 errors.Add("Please select a Year.");
+            }
 
             if (!decimal.TryParse(textPrice.Text, NumberStyles.Number,
-                CultureInfo.CurrentCulture, out var price) || price < 0)
-                errors.Add("Price must be a non-negative number.");
+                                  CultureInfo.CurrentCulture, out parsedPrice))
+            {
+                errors.Add("Price must be a valid number.");
+            }
 
             if (errors.Count > 0)
-                labelResult.Text = "Please fix the following:\n• " + string.Join("\n• ", errors);
+            {
+                UpdateStatus("Please fix the following:\n• " + string.Join("\n• ", errors));
+                return false;
+            }
 
-            return errors.Count == 0;
+            return true;
         }
 
         private void ResetInputs()
+        {
+            ResetInputsInternal(true);
+        }
+
+        private void ResetInputsInternal(bool updateStatus)
         {
             comboMake.SelectedIndex = -1;
             textModel.Clear();
@@ -80,48 +96,91 @@ namespace CarViewer
             textPrice.Clear();
             checkIsNew.IsChecked = false;
             listCars.SelectedIndex = -1;
-            labelResult.Text = "Ready.";
+            radioCar.IsChecked = true;
+
+            if (updateStatus)
+            {
+                UpdateStatus("Inputs cleared.");
+            }
+
             comboMake.Focus();
         }
 
         private void Enter_Click(object sender, RoutedEventArgs e)
         {
-            if (!ValidateInputs(out _))
+            if (!ValidateInputs(out var price))
+            {
                 return;
+            }
 
             var make = (string)comboMake.SelectedItem!;
-            var model = textModel.Text.Trim();
+            var model = textModel.Text;
             var year = (int)comboYear.SelectedItem!;
-            var price = decimal.Parse(textPrice.Text, CultureInfo.CurrentCulture);
             var isNew = checkIsNew.IsChecked == true;
 
-            var selectedCar = listCars.SelectedItem as Car;
+            var selectedVehicle = listCars.SelectedItem as Vehicle;
 
-            if (selectedCar is null)
+            try
             {
-                var newCar = new Car(make, model, year, price, isNew);
-                carsById[newCar.IdentificationNumber] = newCar;
-                carsView.Add(newCar);
-                labelResult.Text = $"Added: {newCar}";
-            }
-            else
-            {
-                var id = selectedCar.IdentificationNumber;
-                if (carsById.TryGetValue(id, out var car))
+                if (selectedVehicle is null)
                 {
-                    car.Make = make;
-                    car.Model = model;
-                    car.Year = year;
-                    car.Price = price;
-                    car.IsNew = isNew;
+                    Vehicle newVehicle = CreateVehicleFromSelection(make, model, year, price, isNew);
 
-                    // Refresh ListBox
-                    CollectionViewSource.GetDefaultView(carsView).Refresh();
-                    labelResult.Text = $"Modified: {car}";
+                    _vehiclesById[newVehicle.IdentificationNumber] = newVehicle;
+                    _vehiclesView.Add(newVehicle);
+
+                    // I should feel bad. :(
+                    UpdateStatus($"Added: {newVehicle.Display}");
                 }
+                else
+                {
+                    var id = selectedVehicle.IdentificationNumber;
+                    if (_vehiclesById.TryGetValue(id, out var vehicle))
+                    {
+                        vehicle.Make = make;
+                        vehicle.Model = model;
+                        vehicle.Year = year;
+                        vehicle.Price = price;
+                        vehicle.IsNew = isNew;
+
+                        CollectionViewSource.GetDefaultView(_vehiclesView).Refresh();
+                        // I should feel bad. :(
+                        UpdateStatus($"Modified: {vehicle.Display}");
+                    }
+                }
+
+                UpdateStatistics();
+                ResetInputsInternal(false);
+            }
+            catch (ArgumentNullException)
+            {
+                UpdateStatus("Model cannot be blank.");
+                textModel.Focus();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                UpdateStatus("Price cannot be negative.");
+                textPrice.Focus();
+            }
+            catch (Exception)
+            {
+                // I should feel bad. :(
+                UpdateStatus("An unexpected error occurred while adding the vehicle.");
+            }
+        }
+
+        private Vehicle CreateVehicleFromSelection(string make, string model, int year, decimal price, bool isNew)
+        {
+            // Even if things feel fishy, this factory method ensures
+            // the right type of vehicle swims into our collection.
+
+            if (radioMotorcycle.IsChecked == true)
+            {
+                return new Motorcycle(make, model, year, price, isNew);
             }
 
-            ResetInputs();
+            // Default to Car
+            return new Car(make, model, year, price, isNew);
         }
 
         private void Reset_Click(object sender, RoutedEventArgs e)
@@ -134,38 +193,82 @@ namespace CarViewer
             Close();
         }
 
-        private void listCars_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void listCars_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (listCars.SelectedItem is not Car car)
+            if (listCars.SelectedItem is not Vehicle vehicle)
+            {
                 return;
+            }
 
-            comboMake.SelectedItem = car.Make;
-            textModel.Text = car.Model;
-            comboYear.SelectedItem = car.Year;
-            textPrice.Text = car.Price.ToString("0.##", CultureInfo.CurrentCulture);
-            checkIsNew.IsChecked = car.IsNew;
+            comboMake.SelectedItem = vehicle.Make;
+            textModel.Text = vehicle.Model;
+            comboYear.SelectedItem = vehicle.Year;
+            textPrice.Text = vehicle.Price.ToString("0.##", CultureInfo.CurrentCulture);
+            checkIsNew.IsChecked = vehicle.IsNew;
 
-            labelResult.Text = $"Loaded for edit: {car}";
+            if (vehicle.Type == "Motorcycle")
+            {
+                radioMotorcycle.IsChecked = true;
+            }
+            else
+            {
+                radioCar.IsChecked = true;
+            }
+
+            UpdateStatus($"Loaded for edit: {vehicle.Display}");
         }
 
-        private void LoadSampleCars()
+        private void LoadSampleVehicles()
         {
-            var samples = new List<Car>
+            var samples = new List<Vehicle>
             {
                 new Car("Toyota", "Corolla", 2021, 21950m, true),
                 new Car("Honda", "Civic", 2020, 20400m, false),
-                new Car("Ford", "F-150", 2022, 38900m, true),
-                new Car("Hyundai", "Elantra", 2019, 18200m, false),
-                new Car("BMW", "X5", 2023, 74900m, true)
+                new Motorcycle("Yamaha", "MT-07", 2022, 9500m, true)
             };
 
-            foreach (var car in samples)
+            foreach (var vehicle in samples)
             {
-                carsById[car.IdentificationNumber] = car;
-                carsView.Add(car);
+                _vehiclesById[vehicle.IdentificationNumber] = vehicle;
+                _vehiclesView.Add(vehicle);
             }
 
-            labelResult.Text = $"Loaded {samples.Count} demo cars.";
+            UpdateStatus($"Loaded {samples.Count} demo vehicles.");
+        }
+
+        private void UpdateStatistics()
+        {
+            int count = _vehiclesView.Count;
+            decimal total = _vehiclesView.Sum(v => v.Price);
+            decimal average = count > 0 ? total / count : 0m;
+
+            textVehicleCount.Text = count.ToString();
+            textTotalPrice.Text = total.ToString("C", CultureInfo.CurrentCulture);
+            textAveragePrice.Text = count > 0
+                ? average.ToString("C", CultureInfo.CurrentCulture)
+                : "N/A";
+        }
+
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tabAdd.IsSelected)
+            {
+                UpdateStatus("Adding vehicles.");
+            }
+            else if (tabList.IsSelected)
+            {
+                UpdateStatus("Viewing vehicle list.");
+            }
+            else if (tabStats.IsSelected)
+            {
+                UpdateStatistics();
+                UpdateStatus("Viewing inventory statistics.");
+            }
+        }
+
+        private void UpdateStatus(string message)
+        {
+            labelResult.Text = $"{DateTime.Now:T} — {message}";
         }
     }
 }
